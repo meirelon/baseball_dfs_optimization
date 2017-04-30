@@ -3,6 +3,7 @@ server <- function(input, output){
      batters <- read.csv("batter_gamelogs_2017_colheads.csv", stringsAsFactors = F)
      pitchers <- read.csv("pitcher_gamelogs_2017_colheads.csv", stringsAsFactors = F)
      player_info <- read.csv("player_info_clean.csv", stringsAsFactors = F)
+     
      opening_day_week = week(mdy("4/02/2017")) - 1 # need the url for downloading and then change it to 2017
      opening_day <- mdy("04/02/2017")
      batters$game_date <- ymd(batters$game_date)
@@ -265,8 +266,16 @@ server <- function(input, output){
           tmp$Position[tmp$Position == "SP" | tmp$Position == "RP"] <- "P"
           tmp$proj <- tmp$AvgPointsPerGame
           
+          batters_pa <- batters %>% 
+               group_by(player_id) %>% 
+               summarise(PA_tot = sum(PA)) %>% 
+               inner_join(select(player_info, player_id, player_name), by = "player_id") %>% 
+               select(player_name, PA_tot) %>% 
+               filter(PA_tot >= input$"min_pa")
+          
           players_starting <- get_starters(14)
-          tmp2 <- filter(tmp, toupper(Name) %in% toupper(players_starting))
+          tmp2 <- filter(tmp, toupper(Name) %in% toupper(players_starting)) %>% 
+               filter(Position == "P" | (toupper(Name) %in% toupper(batters_pa$player_name)))
           
           if(input$"use_pitch_bat" == T){
                tmp2$proj <- sapply(tmp2$Name, function(q) get_player_projection(playersname = q, tmp2 = tmp2))
@@ -281,13 +290,12 @@ server <- function(input, output){
                     filter(!Opp %in% oppo_not)
                optimizedtable2 <- get_dk_lineup(tmp3)
           }
-          optimizedtable2
+          select(optimizedtable2, -AvgPointsPerGame, -teamAbbrev)
      })
      output$right_name <- renderText({
           players_name1 <- unlist(strsplit(input$'players_name', split = ", "))
           players_name_match1 <- sapply(players_name1, jaccard_best_match)
-          #players_name_match1 <- jaccard_best_match(players_name1, b = player_info$player_name) 
-          paste("You may mean ", players_name_match1)
+          paste("You may mean: ", players_name_match1)
      })
      output$Compare1 <- renderDygraph({
           players_name <- unlist(strsplit(input$'players_name', split = ", "))

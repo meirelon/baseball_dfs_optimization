@@ -27,7 +27,8 @@ ui <- fluidPage(
           tabsetPanel(
                tabPanel("Optimal Lineup Tuning", tags$hr(), tags$p(style = "font-family:Calibri", "Today's optimized lineup without the opposition team you don't want: "), 
                         textInput("oppo_not", "Opposition team names you don't want to include: ", "BOS"), 
-                        selectInput("risk_tol", "Choose your risk tolerance", c("Low Risk", "Medium Risk", "High Risk")), 
+                        selectInput("risk_tol", "Choose your risk tolerance", c("Low Risk", "Medium Risk", "High Risk")),
+                        sliderInput("min_pa", "Choose minimum plate appearences for each batter", min = 0, max = 100, value = 50),
                         checkboxInput("use_pitch_bat", "Use Pitcher vs. Batter in Projections?", value = FALSE),
                         tableOutput("Optimized2"), tags$hr()),
                
