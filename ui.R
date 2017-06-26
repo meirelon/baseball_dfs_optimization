@@ -2,10 +2,9 @@ library(plyr);library(dplyr);library(stringr);library(rvest);library(lubridate);
 ui <- fluidPage(
      theme = shinytheme("united"),
      tags$h2(style = "font-family:Impact",
-             "Daily Fantasy Baseball Player Lineup Optimization"),
+             "Daily Fantasy Baseball Player Performance Prediction and Lineup Optimization"),
      tags$p(style = "font-family:Calibri",
-            "Group 1: Disha An, Luis Flores, 
-            Mike Nestel, Nick Benvenuto"),
+            "A dashboard created and regularly updated by, Michael Nestel"),
      tags$hr(), # Draw a line
      
      #CREATE A SIDEBAR PANEL TO UPLOAD DFS LINK
@@ -21,14 +20,15 @@ ui <- fluidPage(
      
      
      mainPanel(
-          h3("All of the baseball data is in your hands!"),
-          p("Powered by FE550 Team 1"),
+          h3("There will always be people who are ahead of the curve, and people who are behind the curve. But knowledge moves the curve. ~Bill James"),
+          p("Powered by Michael Nestel"),
           
           tabsetPanel(
                tabPanel("Optimal Lineup Tuning", tags$hr(), tags$p(style = "font-family:Calibri", "Today's optimized lineup without the opposition team you don't want: "), 
                         textInput("oppo_not", "Opposition team names you don't want to include: ", "BOS"), 
                         selectInput("risk_tol", "Choose your risk tolerance", c("Low Risk", "Medium Risk", "High Risk")),
                         sliderInput("min_pa", "Choose minimum plate appearences for each batter", min = 0, max = 100, value = 50),
+                        checkboxInput("is_live", "Are Daily Starting Lineups Live?", value = F),
                         checkboxInput("use_pitch_bat", "Use Pitcher vs. Batter in Projections?", value = FALSE),
                         tableOutput("Optimized2"), tags$hr()),
                

@@ -273,9 +273,17 @@ server <- function(input, output){
                select(player_name, PA_tot) %>% 
                filter(PA_tot >= input$"min_pa")
           
-          players_starting <- get_starters(14)
-          tmp2 <- filter(tmp, toupper(Name) %in% toupper(players_starting)) %>% 
-               filter(Position == "P" | (toupper(Name) %in% toupper(batters_pa$player_name)))
+          if(input$is_live == T){
+            # when live...
+            players_starting <- get_starters(14)
+            tmp2 <- filter(tmp, toupper(Name) %in% toupper(players_starting)) %>%
+                 filter(Position == "P" | (toupper(Name) %in% toupper(batters_pa$player_name)))
+          }
+          else{
+            tmp2 <- tmp %>% 
+              filter(Position == "P" | (toupper(Name) %in% toupper(batters_pa$player_name)))
+          }
+          
           
           if(input$"use_pitch_bat" == T){
                tmp2$proj <- sapply(tmp2$Name, function(q) get_player_projection(playersname = q, tmp2 = tmp2))
@@ -284,7 +292,12 @@ server <- function(input, output){
           tmp3 <- tmp2 %>% 
                filter(!Opp %in% oppo_not) %>% 
                filter(toupper(Name) %in% unique(toupper(risk_tolerance_df$player_name)))
+          
+          if(length(unique(tmp3$Position)) != 7){
+            tmp3 <- tmp2
+          }
           optimizedtable2 <- get_dk_lineup(tmp3)
+          
           if(nrow(optimizedtable2) == 0){
                tmp3 <- tmp2 %>% 
                     filter(!Opp %in% oppo_not)
