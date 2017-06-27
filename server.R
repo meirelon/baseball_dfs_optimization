@@ -1,4 +1,4 @@
-library(plyr);library(dplyr);library(stringr);library(rvest);library(lubridate);library(readr);library(tidyr);library(xts);library(dygraphs);library(lazyeval);library(RColorBrewer);library(shiny);library(shinythemes);library(weatherData)
+library(plyr);library(dplyr);library(stringr);library(rvest);library(lubridate);library(readr);library(tidyr);library(xts);library(dygraphs);library(lazyeval);library(RColorBrewer);library(shiny);library(shinythemes);library(weatherData);library(pbapply)
 server <- function(input, output){
      batters <- read.csv("batter_gamelogs_2017_colheads.csv", stringsAsFactors = F)
      pitchers <- read.csv("pitcher_gamelogs_2017_colheads.csv", stringsAsFactors = F)
