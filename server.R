@@ -1,9 +1,11 @@
-library(plyr);library(dplyr);library(stringr);library(rvest);library(lubridate);library(readr);library(tidyr);library(xts);library(dygraphs);library(lazyeval);library(RColorBrewer);library(shiny);library(shinythemes)
+library(plyr);library(dplyr);library(stringr);library(rvest);library(lubridate);library(readr);library(tidyr);library(xts);library(dygraphs);library(lazyeval);library(RColorBrewer);library(shiny);library(shinythemes);library(weatherData)
 server <- function(input, output){
      batters <- read.csv("batter_gamelogs_2017_colheads.csv", stringsAsFactors = F)
      pitchers <- read.csv("pitcher_gamelogs_2017_colheads.csv", stringsAsFactors = F)
      player_info <- read.csv("player_info_clean.csv", stringsAsFactors = F)
-     
+     baseball_cities <- read_csv("abr_to_city.csv")
+     data("USAirportWeatherStations")
+
      opening_day_week = week(mdy("4/02/2017")) - 1 # need the url for downloading and then change it to 2017
      opening_day <- mdy("04/02/2017")
      batters$game_date <- ymd(batters$game_date)
@@ -241,6 +243,45 @@ server <- function(input, output){
           left_join(select(player_info, player_id, player_name), by = "player_id") %>% 
           group_by(player_id) %>% 
           filter(game_date == max(game_date))
+     
+     ##Predictions using a Neural Network
+     nnet_predict <- function(df, dv, seed_no){
+       require(neuralnet)
+       for(i in 1:1){
+         df <- df[,sapply(df, is.numeric)]
+         keep_cols <- c("DFS.DK.", "PA", "BOP", "Mean_TemperatureF", "MeanDew_PointF", "Mean_Humidity", "Mean_VisibilityMiles", "Mean_Wind_SpeedMPH", "CloudCover", "WindDirDegrees")
+         df <- df[,colnames(df) %in% keep_cols]
+         df[is.na(df)] <- 0
+         if(!all(sapply(df, is.numeric)) | nrow(df) < 20){
+           break
+         }
+         set.seed(seed_no)
+         #scale the data
+         dv_col <- df[,colnames(df) %in% dv]
+         
+         input_layers <- sum(colnames(df) != dv)
+         hidden_layers <- (floor(input_layers*(2/3))/2) + c(-1, 1)
+         maxs <- apply(df, 2, max) 
+         mins <- apply(df, 2, min)
+         scaled <- as.data.frame(scale(df, center = mins, scale = maxs - mins))
+         scaled[is.na(scaled)] <- 0
+         
+         index <- 1:(nrow(scaled)-1)
+         train_ <- scaled[index,]
+         n <- names(train_)
+         test_ <- scaled[-index,]
+         f <- as.formula(paste(sprintf("%s ~", dv), paste(n[!n %in% dv], collapse = " + ")))
+         nn <- neuralnet(f, data=train_, hidden = hidden_layers, linear.output=T)
+         
+         pr.nn <- neuralnet::compute(nn, test_[,!colnames(test_) %in% dv])
+         pr.nn <- pr.nn$net.result*(max(dv_col)-min(dv_col))+min(dv_col)
+         return_me <- pr.nn
+         
+         return(return_me)
+       }
+     }
+     
+     
      ####
      #BEGIN SHINY OUTPUT
      ####
@@ -284,6 +325,56 @@ server <- function(input, output){
               filter(Position == "P" | (toupper(Name) %in% toupper(batters_pa$player_name)))
           }
           
+          if(input$is_weather == T){
+            output$please_wait <- renderText({
+              "Please wait a few minutes while we extract the most current weather information..."
+            })
+            
+            Stations_df <- USAirportWeatherStations %>% 
+              inner_join(baseball_cities, by = c("Station" = "Station", "State" = "State"))
+            
+            
+            #Get Weather for all baseball cities
+            weather_df <- pblapply(Stations_df$airportCode, function(x) getWeatherForDate(station_id = x, start_date = mdy("04/02/2017"), end_date = Sys.Date(), station_type = "airportCode", opt_all_columns = T, opt_verbose = F)[,-2])
+            names(weather_df) <- Stations_df$Opp
+            weather_df <- do.call(rbind, weather_df)
+            weather_df$team <- rownames(weather_df)
+            weather_df$team <- str_extract(toupper(weather_df$team), pattern = "^[A-Z]+")
+            rownames(weather_df) <- NULL
+            weather_df$Date <- ymd(weather_df$Date)
+            remove_cols <- !str_detect(colnames(weather_df), "(Max|Min|Events)")
+            weather_df <- weather_df[,remove_cols]
+            
+            batters_weather_df <- batters %>% 
+              mutate(station_to_take = ifelse(is.na(home_away), Tm, Opp), game_date = ymd(game_date)) %>% 
+              left_join(weather_df, by = c("station_to_take" = "team", "game_date" = "Date"))
+            
+            batters_list <- split(batters_weather_df, batters_weather_df$player_id)
+            
+            tmp_predict <- sapply(batters_list, function(x) mean(nnet_predict(df = x, dv = "DFS.DK.", seed_no = 350)))
+            prediction_df <- data.frame()
+            for(i in 1:length(batters_list)){
+              a <- cbind.data.frame(batters_list[[i]][nrow(batters_list[[i]]),], proj = tmp_predict[i])
+              prediction_df <- rbind.data.frame(prediction_df, a)
+            }
+            
+            prediction_df <- prediction_df %>% 
+              filter(abs(DFS.DK. - proj) < 6) %>% 
+              select(player_id, proj) %>% 
+              inner_join(select(player_info, player_id, player_name), by = "player_id") %>% 
+              select(player_name, proj)
+            
+            a <- tmp %>%
+              filter(Position == "P" | (toupper(Name) %in% toupper(batters_pa$player_name))) %>% 
+              anti_join(select(prediction_df, player_name), by = c("Name" = "player_name"))
+            
+            b <- tmp %>% 
+              filter(Position == "P" | (toupper(Name) %in% toupper(batters_pa$player_name))) %>% 
+              select(-proj) %>% 
+              inner_join(prediction_df, by = c("Name" = "player_name"))
+            
+            tmp2 <- rbind.data.frame(a,b)
+          }
           
           if(input$"use_pitch_bat" == T){
                tmp2$proj <- sapply(tmp2$Name, function(q) get_player_projection(playersname = q, tmp2 = tmp2))

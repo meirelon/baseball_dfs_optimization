@@ -29,6 +29,8 @@ ui <- fluidPage(
                         selectInput("risk_tol", "Choose your risk tolerance", c("Low Risk", "Medium Risk", "High Risk")),
                         sliderInput("min_pa", "Choose minimum plate appearences for each batter", min = 0, max = 100, value = 50),
                         checkboxInput("is_live", "Are Daily Starting Lineups Live?", value = F),
+                        checkboxInput("is_weather", "Use Weather Data in Projections?", value = F),
+                        textOutput("please_wait"),
                         checkboxInput("use_pitch_bat", "Use Pitcher vs. Batter in Projections?", value = FALSE),
                         tableOutput("Optimized2"), tags$hr()),
                

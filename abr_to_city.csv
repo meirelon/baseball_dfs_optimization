@@ -1,0 +1,31 @@
+Opp,Station,State,dome
+ARI,Phoenix,AZ,FALSE
+ATL,Atlanta,GA,FALSE
+BAL,Baltimore,MD,FALSE
+BOS,Boston,MA,FALSE
+CHC,Chicago,IL,FALSE
+CHW,Chicago,IL,FALSE
+CIN,Cincinnati,OH,FALSE
+CLE,Cleveland,OH,FALSE
+COL,Denver,CO,FALSE
+DET,Detroit,MI,FALSE
+HOU,Houston,TX,FALSE
+KCR,Kansas City,MO,FALSE
+LAA,Los Angeles,CA,FALSE
+LAD,Los Angeles,CA,FALSE
+MIA,Miami,FL,TRUE
+MIL,Milwaukee,WI,FALSE
+MIN,Minneapolis,MN,FALSE
+NYM,New York,NY,FALSE
+NYY,New York,NY,FALSE
+OAK,San Francisco,CA,FALSE
+PHI,Philadelphia,PA,FALSE
+PIT,Pittsburgh,PA,FALSE
+SDP,San Diego,CA,FALSE
+SEA,Seattle,WA,FALSE
+SFG,San Francisco,CA,FALSE
+STL,St. Louis,MO,FALSE
+TBR,Tampa,FL,TRUE
+TEX,Arlington,TX,FALSE
+TOR,Toronto,CN,TRUE
+WSN,Washington,DC,FALSE
